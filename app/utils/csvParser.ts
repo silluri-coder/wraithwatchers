@@ -22,7 +22,7 @@ export async function loadSightingsData(): Promise<Sighting[]> {
       Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
-        complete: (results) => {
+        complete: (results: Papa.ParseResult<any>) => {
           try {
             const sightings: Sighting[] = results.data.map((row: any, index: number) => ({
               id: index + 1,
@@ -35,7 +35,7 @@ export async function loadSightingsData(): Promise<Sighting[]> {
               timeOfDay: row['Time of Day'] || '',
               apparitionType: row['Tag of Apparition'] || '',
               imageLink: row['Image Link'] || ''
-            })).filter(sighting => 
+            })).filter((sighting: Sighting) => 
               sighting.latitude !== 0 && 
               sighting.longitude !== 0 && 
               sighting.date && 
@@ -45,12 +45,12 @@ export async function loadSightingsData(): Promise<Sighting[]> {
             
             console.log('📊 Loaded', sightings.length, 'sightings from CSV');
             resolve(sightings);
-          } catch (error) {
+          } catch (error: any) {
             console.error('Error processing CSV data:', error);
             reject(error);
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error parsing CSV:', error);
           reject(error);
         }
