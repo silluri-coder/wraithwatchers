@@ -1,26 +1,72 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #F8F8F8;
+  --accent: #FF9F40;
+  --muted: #6E6E6E;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .ghost-glow {
+    box-shadow: 0 0 20px rgba(248, 248, 248, 0.1);
+  }
+  
+  .ghost-hover {
+    transition: all 0.3s ease;
+  }
+  
+  .ghost-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(248, 248, 248, 0.15);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6E6E6E;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FF9F40;
+}
+
+/* Leaflet map customizations */
+.leaflet-container {
+  background: #1a1a1a !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #1a1a1a !important;
+  color: #F8F8F8 !important;
+  border-radius: 8px !important;
+}
+
+.leaflet-popup-tip {
+  background: #1a1a1a !important;
 }

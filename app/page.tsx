@@ -1,103 +1,133 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import SightingsStats from './components/SightingsStats';
+import SightingsMap from './components/SightingsMap';
+import SightingsTable from './components/SightingsTable';
+import { loadSightingsData, Sighting } from './utils/csvParser';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [sightings, setSightings] = useState<Sighting[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        console.log('🔄 Loading sightings data from CSV...');
+        const data = await loadSightingsData();
+        setSightings(data);
+        setLoading(false);
+        
+        // Console log to confirm changes are visible
+        console.log('👻 WraithWatchers App Loaded - Total Sightings:', data.length);
+        console.log('🗺️ Map markers updated with locations:', data.slice(0, 5).map(s => `${s.city}, ${s.state}`));
+        console.log('📊 Apparition types distribution:', data.reduce((acc, s) => {
+          acc[s.apparitionType] = (acc[s.apparitionType] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>));
+      } catch (err) {
+        console.error('Error loading sightings data:', err);
+        setError('Failed to load sightings data');
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-400 mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold text-white mb-2">Loading WraithWatchers</h2>
+          <p className="text-gray-400">Fetching spectral encounter data...</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">👻</div>
+          <h2 className="text-2xl font-bold text-white mb-2">Error Loading Data</h2>
+          <p className="text-gray-400 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-orange-400 hover:bg-orange-500 text-black px-6 py-2 rounded font-medium transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-black">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+            WraithWatchers
+          </h1>
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            Tracking spectral encounters across the United States. Explore our database of {sightings.length.toLocaleString()} verified ghost sightings and paranormal activity.
+          </p>
+        </div>
+
+        {/* Statistics */}
+        <SightingsStats sightings={sightings} />
+
+        {/* Map and Table Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Map */}
+          <div className="lg:col-span-1">
+            <SightingsMap sightings={sightings} />
+          </div>
+          
+          {/* Quick Stats */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <h3 className="text-xl font-bold text-white mb-4">Recent Activity</h3>
+              <div className="space-y-3">
+                {sightings.slice(0, 5).map((sighting) => (
+                  <div key={sighting.id} className="flex items-center justify-between p-3 bg-gray-800 rounded">
+                    <div>
+                      <p className="text-white font-medium">{sighting.apparitionType}</p>
+                      <p className="text-gray-400 text-sm">{sighting.city}, {sighting.state}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gray-300 text-sm">{sighting.date}</p>
+                      <p className="text-gray-500 text-xs">{sighting.timeOfDay}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <h3 className="text-xl font-bold text-white mb-4">Apparition Types</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from(new Set(sightings.map(s => s.apparitionType))).slice(0, 6).map((type) => (
+                  <div key={type} className="bg-gray-800 p-3 rounded text-center">
+                    <p className="text-white text-sm font-medium">{type}</p>
+                    <p className="text-orange-400 text-xs">
+                      {sightings.filter(s => s.apparitionType === type).length} sightings
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <SightingsTable sightings={sightings} />
+      </div>
     </div>
   );
 }
