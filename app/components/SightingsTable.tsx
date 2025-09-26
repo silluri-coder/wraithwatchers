@@ -193,19 +193,53 @@ export default function SightingsTable({ sightings }: SightingsTableProps) {
             Previous
           </button>
           
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-2 rounded transition-colors ${
-                currentPage === page
-                  ? 'bg-orange-400 text-black'
-                  : 'bg-gray-800 text-white hover:bg-gray-700'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
+          {/* Show first page if not in current range */}
+          {currentPage > 6 && (
+            <>
+              <button
+                onClick={() => setCurrentPage(1)}
+                className="px-3 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+              >
+                1
+              </button>
+              {currentPage > 7 && <span className="px-2 text-gray-400">...</span>}
+            </>
+          )}
+          
+          {/* Show pages around current page (max 10 pages) */}
+          {Array.from({ length: Math.min(10, totalPages) }, (_, i) => {
+            const startPage = Math.max(1, Math.min(currentPage - 4, totalPages - 9));
+            const page = startPage + i;
+            
+            if (page > totalPages) return null;
+            
+            return (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-2 rounded transition-colors ${
+                  currentPage === page
+                    ? 'bg-orange-400 text-black'
+                    : 'bg-gray-800 text-white hover:bg-gray-700'
+                }`}
+              >
+                {page}
+              </button>
+            );
+          })}
+          
+          {/* Show last page if not in current range */}
+          {currentPage < totalPages - 5 && (
+            <>
+              {currentPage < totalPages - 6 && <span className="px-2 text-gray-400">...</span>}
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                className="px-3 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
           
           <button
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
