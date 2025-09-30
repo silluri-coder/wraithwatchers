@@ -1,26 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import SightingsStats from './components/SightingsStats';
 import SightingsMap from './components/SightingsMap';
 import SightingsTable from './components/SightingsTable';
-import { loadSightingsData, Sighting } from './utils/csvParser';
+import { loadSightingsData, Sighting } from './utils/supabaseClient';
 
 export default function Home() {
   const [sightings, setSightings] = useState<Sighting[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filteredSightings, setFilteredSightings] = useState<Sighting[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log('🔄 Loading sightings data from CSV...');
+        console.log('🔄 Loading sightings data from Supabase...');
+        const startTime = performance.now();
         const data = await loadSightingsData();
+        const loadTime = performance.now() - startTime;
         setSightings(data);
+        setFilteredSightings(data); // Initialize filtered sightings
         setLoading(false);
         
         // Console log to confirm changes are visible
         console.log('👻 WraithWatchers App Loaded - Total Sightings:', data.length);
+        console.log('⏱️ Data loaded in:', Math.round(loadTime), 'ms');
         console.log('🗺️ Map markers updated with locations:', data.slice(0, 5).map(s => `${s.city}, ${s.state}`));
         console.log('📊 Apparition types distribution:', data.reduce((acc, s) => {
           acc[s.apparitionType] = (acc[s.apparitionType] || 0) + 1;
@@ -34,6 +39,30 @@ export default function Home() {
     };
 
     loadData();
+  }, []);
+
+  // Memoize recent activity data
+  const recentSightings = useMemo(() => sightings.slice(0, 5), [sightings]);
+  
+  // Memoize apparition types
+  const apparitionTypes = useMemo(() => 
+    Array.from(new Set(sightings.map(s => s.apparitionType))).slice(0, 6),
+    [sightings]
+  );
+  
+  // Memoize apparition counts
+  const apparitionCounts = useMemo(() => 
+    sightings.reduce((acc, s) => {
+      acc[s.apparitionType] = (acc[s.apparitionType] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    [sightings]
+  );
+
+  // Stable callback for filter changes
+  const handleFilterChange = useCallback((filtered: Sighting[]) => {
+    console.log('Filter changed, updating map with', filtered.length, 'sightings');
+    setFilteredSightings(filtered);
   }, []);
 
   if (loading) {
@@ -86,7 +115,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Map */}
           <div className="lg:col-span-1">
-            <SightingsMap sightings={sightings} />
+            <SightingsMap sightings={filteredSightings} />
           </div>
           
           {/* Quick Stats */}
@@ -94,7 +123,7 @@ export default function Home() {
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
               <h3 className="text-xl font-bold text-white mb-4">Recent Activity</h3>
               <div className="space-y-3">
-                {sightings.slice(0, 5).map((sighting) => (
+                {recentSightings.map((sighting) => (
                   <div key={sighting.id} className="flex items-center justify-between p-3 bg-gray-800 rounded">
                     <div>
                       <p className="text-white font-medium">{sighting.apparitionType}</p>
@@ -112,11 +141,11 @@ export default function Home() {
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
               <h3 className="text-xl font-bold text-white mb-4">Apparition Types</h3>
               <div className="grid grid-cols-2 gap-3">
-                {Array.from(new Set(sightings.map(s => s.apparitionType))).slice(0, 6).map((type) => (
+                {apparitionTypes.map((type) => (
                   <div key={type} className="bg-gray-800 p-3 rounded text-center">
                     <p className="text-white text-sm font-medium">{type}</p>
                     <p className="text-orange-400 text-xs">
-                      {sightings.filter(s => s.apparitionType === type).length} sightings
+                      {apparitionCounts[type]} sightings
                     </p>
                   </div>
                 ))}
@@ -126,7 +155,10 @@ export default function Home() {
         </div>
 
         {/* Table */}
-        <SightingsTable sightings={sightings} />
+        <SightingsTable 
+          sightings={sightings} 
+          onFilterChange={handleFilterChange}
+        />
       </div>
     </div>
   );

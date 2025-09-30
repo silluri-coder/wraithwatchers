@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Sighting } from '../utils/csvParser';
+import { useState, useEffect, useMemo } from 'react';
+import { Sighting } from '../utils/supabaseClient';
 
 interface SightingsTableProps {
   sightings: Sighting[];
+  onFilterChange?: (filteredSightings: Sighting[]) => void;
 }
 
-export default function SightingsTable({ sightings }: SightingsTableProps) {
+export default function SightingsTable({ sightings, onFilterChange }: SightingsTableProps) {
   const [filter, setFilter] = useState({
     apparitionType: '',
     timeOfDay: '',
@@ -23,34 +24,44 @@ export default function SightingsTable({ sightings }: SightingsTableProps) {
   const uniqueTimeOfDay = [...new Set(sightings.map(s => s.timeOfDay))];
   const uniqueStates = [...new Set(sightings.map(s => s.state))];
 
-  // Filter and sort sightings
-  const filteredSightings = sightings
-    .filter(sighting => {
-      return (
-        (filter.apparitionType === '' || sighting.apparitionType === filter.apparitionType) &&
-        (filter.timeOfDay === '' || sighting.timeOfDay === filter.timeOfDay) &&
-        (filter.state === '' || sighting.state === filter.state)
-      );
-    })
-    .sort((a, b) => {
-      let aValue: any = a[sortBy as keyof Sighting];
-      let bValue: any = b[sortBy as keyof Sighting];
-      
-      if (sortBy === 'date') {
-        aValue = new Date(a.date).getTime();
-        bValue = new Date(b.date).getTime();
-      }
-      
-      // Handle undefined values
-      if (aValue === undefined) aValue = '';
-      if (bValue === undefined) bValue = '';
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
+  // Filter and sort sightings - memoized to prevent unnecessary recalculations
+  const filteredSightings = useMemo(() => {
+    return sightings
+      .filter(sighting => {
+        return (
+          (filter.apparitionType === '' || sighting.apparitionType === filter.apparitionType) &&
+          (filter.timeOfDay === '' || sighting.timeOfDay === filter.timeOfDay) &&
+          (filter.state === '' || sighting.state === filter.state)
+        );
+      })
+      .sort((a, b) => {
+        let aValue: any = a[sortBy as keyof Sighting];
+        let bValue: any = b[sortBy as keyof Sighting];
+        
+        if (sortBy === 'date') {
+          aValue = new Date(a.date).getTime();
+          bValue = new Date(b.date).getTime();
+        }
+        
+        // Handle undefined values
+        if (aValue === undefined) aValue = '';
+        if (bValue === undefined) bValue = '';
+        
+        if (sortOrder === 'asc') {
+          return aValue > bValue ? 1 : -1;
+        } else {
+          return aValue < bValue ? 1 : -1;
+        }
+      });
+  }, [sightings, filter, sortBy, sortOrder]);
+
+  // Notify parent component when filters change (not when filteredSightings changes)
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange(filteredSightings);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter.apparitionType, filter.timeOfDay, filter.state, sortBy, sortOrder, sightings]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSightings.length / itemsPerPage);
@@ -70,6 +81,10 @@ export default function SightingsTable({ sightings }: SightingsTableProps) {
   const clearFilters = () => {
     setFilter({ apparitionType: '', timeOfDay: '', state: '' });
     setCurrentPage(1);
+    // Immediately notify parent to show all sightings
+    if (onFilterChange) {
+      onFilterChange(sightings);
+    }
   };
 
   return (
@@ -78,6 +93,9 @@ export default function SightingsTable({ sightings }: SightingsTableProps) {
         <h2 className="text-2xl font-bold text-white">Recent Sightings</h2>
         <div className="text-sm text-gray-400">
           Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredSightings.length)} of {filteredSightings.length} sightings
+          {filteredSightings.length < sightings.length && (
+            <span className="ml-2 text-orange-400">(filtered from {sightings.length} total)</span>
+          )}
         </div>
       </div>
 

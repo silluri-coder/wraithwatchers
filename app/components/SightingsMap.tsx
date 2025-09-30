@@ -1,7 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Sighting } from '../utils/csvParser';
+import { memo } from 'react';
+import { Sighting } from '../utils/supabaseClient';
 
 // Dynamically import the map component to avoid SSR issues
 const MapComponent = dynamic(() => import('./MapComponent'), {
@@ -16,17 +17,29 @@ const MapComponent = dynamic(() => import('./MapComponent'), {
   )
 });
 
+// Suppress hydration warnings for the map
+if (typeof window !== 'undefined') {
+  MapComponent.displayName = 'MapComponent';
+}
+
 interface SightingsMapProps {
   sightings: Sighting[];
 }
 
-export default function SightingsMap({ sightings }: SightingsMapProps) {
+function SightingsMap({ sightings }: SightingsMapProps) {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <h2 className="text-2xl font-bold text-white mb-4">Sightings Map</h2>
-      <div className="h-96 w-full rounded-lg overflow-hidden">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-white">Sightings Map</h2>
+        <div className="text-sm text-gray-400">
+          {sightings.length} location{sightings.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+      <div className="h-96 w-full rounded-lg overflow-hidden relative">
         <MapComponent sightings={sightings} />
       </div>
     </div>
   );
 }
+
+export default memo(SightingsMap);
