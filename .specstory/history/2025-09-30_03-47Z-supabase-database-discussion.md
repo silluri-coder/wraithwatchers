@@ -5404,3 +5404,245 @@ PS C:\src\sreeia-boilerplate>
 
 ---
 
+<think><details><summary>Thought Process</summary>Good! I've removed the unnecessary files. Let me also check if there's a csvParser.ts file that might be obsolete now.</details></think>
+
+---
+
+Tool use: **list_dir**
+
+<details>
+            <summary>Listed directory undefined • **0** results</summary>
+        
+No results found
+</details>
+
+---
+
+<think><details><summary>Thought Process</summary>Good! The csvParser.ts file has already been removed. Let me verify the app still has what it needs and show the user what was cleaned up.</details></think>
+
+---
+
+Tool use: **run_terminal_cmd**
+
+```bash
+Get-ChildItem -Recurse -File | Where-Object { $_.Extension -match '\.(py|sql|csv)$' } | Select-Object FullName
+```
+
+```
+xtension -match '\.(py|sql|csv)$' } | Select-Object FullName
+
+FullName
+--------
+C:\src\sreeia-boilerplate\node_modules\papaparse\tests\long-sample.csv
+C:\src\sreeia-boilerplate\node_modules\papaparse\tests\sample-header.csv        
+C:\src\sreeia-boilerplate\node_modules\papaparse\tests\sample.csv
+C:\src\sreeia-boilerplate\node_modules\papaparse\tests\utf-8-bom-sample.csv     
+C:\src\sreeia-boilerplate\node_modules\papaparse\tests\verylong-sample.csv      
+C:\src\sreeia-boilerplate\public\data\ghost_sightings_12000_with_images.csv     
+
+
+PS C:\src\sreeia-boilerplate>
+```
+
+---
+
+<think><details><summary>Thought Process</summary>Wait, the CSV file still exists? Let me try to delete it again.</details></think>
+
+---
+
+Tool use: **run_terminal_cmd**
+
+```bash
+Remove-Item "public\data\ghost_sightings_12000_with_images.csv" -Force
+```
+
+```
+h_images.csv" -Force
+PS C:\src\sreeia-boilerplate> 
+```
+
+---
+
+Tool use: **run_terminal_cmd**
+
+```bash
+if (Test-Path "public\data") { if ((Get-ChildItem "public\data" -Force | Measure-Object).Count -eq 0) { Remove-Item "public\data" -Force } }
+```
+
+```
+"public\data" -Force | Measure-Object).Count -eq 0) { Remove-Item "public\data" 
+-Force } }
+PS C:\src\sreeia-boilerplate>
+```
+
+---
+
+<think><details><summary>Thought Process</summary>Let me verify if papaparse is still being used anywhere in the codebase, and if not, remove it from package.json dependencies.</details></think>
+
+---
+
+Tool use: **grep**
+
+---
+
+Tool use: **read_file**
+
+Read file: package.json
+
+---
+
+<think><details><summary>Thought Process</summary>Great! `papaparse` is not being used anywhere in the app code since we switched to Supabase. I should:
+1. Remove `papaparse` from dependencies
+2. Remove `@types/papaparse` from devDependencies
+3. Remove the `load-data` script since `loadDataToSupabase.ts` was already deleted
+4. Run npm install to clean up node_modules
+
+Also, `dotenv` was only used for the temporary data loading script, so it can also be removed.</details></think>
+
+---
+
+Tool use: **search_replace**
+
+
+<details><summary>Edit file: package.json</summary>
+
+**Chunk 1**
+Lines added: 1, lines removed: 4
+
+```diff
+@@ -6,15 +6,12 @@
+      "dev": "next dev --turbopack",
+      "build": "next build --turbopack",
+-     "start": "next start",
+-     "load-data": "tsx loadDataToSupabase.ts"
++     "start": "next start"
+    },
+    "dependencies": {
+      "@supabase/supabase-js": "^2.48.1",
+      "@types/leaflet": "^1.9.20",
+-     "dotenv": "^16.4.7",
+      "leaflet": "^1.9.4",
+      "leaflet.markercluster": "^1.5.3",
+      "next": "^15.5.4",
+-     "papaparse": "^5.5.3",
+      "react": "19.1.0",
+      "react-dom": "19.1.0",
+```
+
+**Chunk 2**
+Lines added: undefined, lines removed: 2
+
+```diff
+@@ -25,9 +22,7 @@
+      "@types/leaflet.markercluster": "^1.5.6",
+      "@types/node": "^20",
+-     "@types/papaparse": "^5.3.16",
+      "@types/react": "^19",
+      "@types/react-dom": "^19",
+      "tailwindcss": "^4",
+-     "tsx": "^4.19.2",
+      "typescript": "^5"
+    }
+```
+
+</details>
+
+---
+
+Tool use: **run_terminal_cmd**
+
+```bash
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force; npm install
+```
+
+```
+-Scope Process -Force; npm install
+
+removed 8 packages, and audited 73 packages in 4s
+
+10 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+PS C:\src\sreeia-boilerplate> 
+```
+
+---
+
+<think><details><summary>Thought Process</summary>Great! Successfully cleaned up. Let me verify the final state of the project.</details></think>
+
+---
+
+Tool use: **run_terminal_cmd**
+
+```bash
+Get-ChildItem -Path . -File | Where-Object { $_.Extension -match '\.(py|sql)$' } | Select-Object Name
+```
+
+```
+tension -match '\.(py|sql)$' } | Select-Object Name
+PS C:\src\sreeia-boilerplate>
+```
+
+---
+
+Tool use: **run_terminal_cmd**
+
+```bash
+Test-Path "public\data"
+```
+
+```
+False
+PS C:\src\sreeia-boilerplate>
+```
+
+---
+
+<think><details><summary>Thought Process</summary>Perfect! All cleanup is done. Let me show the user a summary of what was removed.</details></think>
+
+---
+
+✅ **Cleanup Complete!** All unnecessary files have been removed.
+
+## 🗑️ Deleted Files:
+
+### Data Files:
+- ❌ `public/data/ghost_sightings_12000_with_images.csv` (12,000 rows, ~2MB)
+- ❌ `public/data/` directory (now empty, removed)
+
+### SQL Scripts:
+- ❌ `csv_to_sql.py` - Python conversion script
+- ❌ `ghost_sightings_insert.sql` - SQL insert statements
+- ❌ `load_ghost_sightings.sql` - SQL load script
+
+### Package Cleanup:
+- ❌ `papaparse` - CSV parser (no longer needed)
+- ❌ `@types/papaparse` - Type definitions
+- ❌ `dotenv` - Environment loader (no longer needed)
+- ❌ `tsx` - TypeScript executor (no longer needed)
+- ❌ `load-data` script from `package.json`
+
+### Result:
+- **8 packages removed** from node_modules
+- **No vulnerabilities** found
+- **Cleaner project structure** - only production-necessary files remain
+
+## 📁 Clean Project Structure:
+
+```
+src/sreeia-boilerplate/
+├── app/              # Next.js application
+│   ├── about/        # About page ✅
+│   ├── report/       # Report sighting form ✅
+│   ├── components/   # React components ✅
+│   └── utils/        # Supabase client ✅
+├── public/           # Static assets (SVGs only)
+├── package.json      # Clean dependencies
+└── tsconfig.json     # TypeScript config
+```
+
+The app now exclusively uses **Supabase** as the data source with no redundant CSV or SQL files!
+
+---
+
