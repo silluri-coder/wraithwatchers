@@ -8,7 +8,7 @@ import { Sighting } from '../utils/supabaseClient';
 const MapComponent = dynamic(() => import('./MapComponent'), {
   ssr: false,
   loading: () => (
-    <div className="h-96 w-full bg-gray-800 rounded-lg flex items-center justify-center">
+    <div className="h-[450px] w-full bg-gray-800 rounded-lg flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-400 mx-auto mb-4"></div>
         <p className="text-gray-400">Loading map...</p>
@@ -28,14 +28,14 @@ interface SightingsMapProps {
 
 function SightingsMap({ sightings }: SightingsMapProps) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-white">Sightings Map</h2>
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+      <div className="flex justify-between items-center mb-3">
+        <h2 className="text-lg font-bold text-white">Sightings Map</h2>
         <div className="text-sm text-gray-400">
           {sightings.length} location{sightings.length !== 1 ? 's' : ''}
         </div>
       </div>
-      <div className="h-96 w-full rounded-lg overflow-hidden relative">
+      <div className="h-[450px] w-full rounded-lg overflow-hidden relative">
         <MapComponent sightings={sightings} />
       </div>
     </div>

@@ -104,13 +104,15 @@ export default function ReportSighting() {
   };
 
   const getCurrentLocation = () => {
+    console.log('📍 Location button clicked');
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser.');
+      setError('Geolocation is not supported by your browser. Please enter location manually.');
       return;
     }
 
     setGettingLocation(true);
     setError(null);
+    console.log('🔄 Getting location...');
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -156,13 +158,30 @@ export default function ReportSighting() {
       },
       (error) => {
         console.error('Error getting location:', error);
-        setError('Unable to get your location. Please check your browser permissions.');
+        let errorMessage = 'Unable to get your location. ';
+        
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += 'Location access denied by user. Please allow location access and try again.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += 'Location information is unavailable. Please try again or enter location manually.';
+            break;
+          case error.TIMEOUT:
+            errorMessage += 'Location request timed out. Please try again.';
+            break;
+          default:
+            errorMessage += 'Please check your browser permissions or enter location manually.';
+            break;
+        }
+        
+        setError(errorMessage);
         setGettingLocation(false);
       },
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 300000
       }
     );
   };
@@ -238,10 +257,10 @@ export default function ReportSighting() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-[1920px] mx-auto px-6 sm:px-12 py-4">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+        <div className="text-center mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-3">
             Report a Sighting
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
@@ -249,18 +268,39 @@ export default function ReportSighting() {
           </p>
         </div>
 
-        {/* Form */}
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded">
-                <p className="font-medium">Error</p>
-                <p className="text-sm">{error}</p>
-              </div>
-            )}
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Form Column */}
+          <div className="lg:col-span-3 bg-gray-900 border border-gray-800 rounded-lg p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded">
+                  <p className="font-medium">Error</p>
+                  <p className="text-sm">{error}</p>
+                </div>
+              )}
 
-            {/* Date of Sighting */}
+          {/* Apparition Type and Date Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="apparition_tag" className="block text-sm font-medium text-gray-300 mb-2">
+                Apparition Type <span className="text-red-400">*</span>
+              </label>
+              <select
+                id="apparition_tag"
+                name="apparition_tag"
+                value={formData.apparition_tag}
+                onChange={handleInputChange}
+                required
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-400"
+              >
+                {apparitionTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label htmlFor="sighting_date" className="block text-sm font-medium text-gray-300 mb-2">
                 Date of Sighting <span className="text-red-400">*</span>
@@ -273,196 +313,190 @@ export default function ReportSighting() {
                 onChange={handleInputChange}
                 max={new Date().toISOString().split('T')[0]}
                 required
-                className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white focus:outline-none focus:border-orange-400"
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-400"
               />
             </div>
+              </div>
 
-            {/* Time of Day */}
-            <div>
-              <label htmlFor="time_of_day" className="block text-sm font-medium text-gray-300 mb-2">
-                Time of Day <span className="text-red-400">*</span>
-              </label>
-              <select
-                id="time_of_day"
-                name="time_of_day"
-                value={formData.time_of_day}
-                onChange={handleInputChange}
-                required
-                className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white focus:outline-none focus:border-orange-400"
-              >
-                {timesOfDay.map(time => (
-                  <option key={time} value={time}>{time}</option>
-                ))}
-              </select>
-            </div>
+          {/* Time of Day */}
+          <div>
+            <label htmlFor="time_of_day" className="block text-sm font-medium text-gray-300 mb-2">
+              Time of Day <span className="text-red-400">*</span>
+            </label>
+            <select
+              id="time_of_day"
+              name="time_of_day"
+              value={formData.time_of_day}
+              onChange={handleInputChange}
+              required
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-400"
+            >
+              {timesOfDay.map(time => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
+          </div>
 
-            {/* Apparition Type */}
-            <div>
-              <label htmlFor="apparition_tag" className="block text-sm font-medium text-gray-300 mb-2">
-                Apparition Type <span className="text-red-400">*</span>
-              </label>
-              <select
-                id="apparition_tag"
-                name="apparition_tag"
-                value={formData.apparition_tag}
-                onChange={handleInputChange}
-                required
-                className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white focus:outline-none focus:border-orange-400"
-              >
-                {apparitionTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
+          {/* Location Section */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Location <span className="text-red-400">*</span>
+            </label>
 
-            {/* Location Section */}
-            <div className="col-span-full">
-              <label className="block text-sm font-medium text-gray-300 mb-3">
-                Location <span className="text-red-400">*</span>
-              </label>
-              
-              {/* Get Location Button */}
-              <button
-                type="button"
-                onClick={getCurrentLocation}
-                disabled={gettingLocation}
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium px-6 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mb-4"
-              >
-                {gettingLocation ? (
-                  <>
-                    <span className="animate-spin">⌛</span>
-                    <span>Getting your location...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>📍</span>
-                    <span>Use My Current Location</span>
-                  </>
-                )}
-              </button>
-
-              {/* Location Status Display */}
-              {locationDetected && coordinates && (
-                <div className="bg-green-900/30 border border-green-500 rounded-lg p-3 mb-4">
-                  <div className="flex items-center gap-2 text-green-300 text-sm">
-                    <span>✓</span>
-                    <span>Location detected: {coordinates.lat.toFixed(4)}, {coordinates.lng.toFixed(4)}</span>
-                  </div>
+            {/* Location Status Display */}
+            {locationDetected && coordinates && (
+              <div className="bg-green-900/30 border border-green-500 rounded p-3 mb-3">
+                <div className="flex items-center gap-2 text-green-300 text-sm">
+                  <span>✓</span>
+                  <span>Location: {coordinates.lat.toFixed(4)}, {coordinates.lng.toFixed(4)}</span>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Manual Entry Option */}
-              <div className="mb-3">
-                <p className="text-gray-400 text-sm mb-3 text-center">OR enter manually:</p>
+            {/* City, State and Location Button Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-1">
+                <label htmlFor="city" className="block text-sm font-medium text-gray-300 mb-2">
+                  City <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  placeholder="e.g., New York"
+                  required
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-400"
+                />
+              </div>
+
+              <div className="md:col-span-1">
+                <label htmlFor="state" className="block text-sm font-medium text-gray-300 mb-2">
+                  State <span className="text-red-400">*</span>
+                </label>
+                <select
+                  id="state"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-400"
+                >
+                  <option value="">Select a state</option>
+                  {usStates.map(state => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="md:col-span-1 flex items-end">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    console.log('Button clicked');
+                    getCurrentLocation();
+                  }}
+                  disabled={gettingLocation}
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium px-3 py-2 text-sm rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  title="Use current location (requires browser permission)"
+                >
+                  {gettingLocation ? (
+                    <span className="animate-spin">⌛</span>
+                  ) : (
+                    <span>📍</span>
+                  )}
+                  <span className="hidden sm:inline">Location</span>
+                </button>
               </div>
             </div>
+          </div>
 
-            {/* City */}
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium text-gray-300 mb-2">
-                City <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                id="city"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                placeholder="e.g., New York"
-                required
-                className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white focus:outline-none focus:border-orange-400"
-              />
-            </div>
+          {/* Notes/Description */}
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-300 mb-2">
+              Description <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              id="notes"
+              name="notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              rows={5}
+              placeholder="Describe what you experienced in detail..."
+              required
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-400 resize-none"
+            />
+          </div>
 
-            {/* State */}
-            <div>
-              <label htmlFor="state" className="block text-sm font-medium text-gray-300 mb-2">
-                State <span className="text-red-400">*</span>
-              </label>
-              <select
-                id="state"
-                name="state"
-                value={formData.state}
-                onChange={handleInputChange}
-                required
-                className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white focus:outline-none focus:border-orange-400"
-              >
-                <option value="">Select a state</option>
-                {usStates.map(state => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
-            </div>
+          {/* Image URL (Optional) */}
+          <div>
+            <label htmlFor="image_url" className="block text-sm font-medium text-gray-300 mb-2">
+              Image URL (Optional)
+            </label>
+            <input
+              type="url"
+              id="image_url"
+              name="image_url"
+              value={formData.image_url}
+              onChange={handleInputChange}
+              placeholder="https://example.com/image.jpg"
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-orange-400"
+            />
+          </div>
 
-            {/* Notes/Description */}
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-300 mb-2">
-                Description <span className="text-red-400">*</span>
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                rows={5}
-                placeholder="Describe what you experienced in detail..."
-                required
-                className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white focus:outline-none focus:border-orange-400 resize-none"
-              />
-              <p className="text-gray-500 text-xs mt-1">
-                Please provide as much detail as possible about your experience.
-              </p>
-            </div>
+          {/* Submit Button */}
+          <div className="flex gap-4 pt-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-orange-400 hover:bg-orange-500 text-black font-medium px-8 py-3 text-lg rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Submitting...' : 'Submit Sighting'}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium text-lg rounded transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+            </form>
+          </div>
 
-            {/* Image URL (Optional) */}
-            <div>
-              <label htmlFor="image_url" className="block text-sm font-medium text-gray-300 mb-2">
-                Image URL (Optional)
-              </label>
-              <input
-                type="url"
-                id="image_url"
-                name="image_url"
-                value={formData.image_url}
-                onChange={handleInputChange}
-                placeholder="https://example.com/image.jpg"
-                className="w-full bg-gray-800 border border-gray-700 rounded px-4 py-2 text-white focus:outline-none focus:border-orange-400"
-              />
-              <p className="text-gray-500 text-xs mt-1">
-                If you have photographic evidence, provide a direct link to the image.
-              </p>
-            </div>
+      {/* Guidelines Column */}
+      <div className="lg:col-span-1 bg-gray-900 border border-gray-800 rounded-lg p-6 h-fit lg:sticky lg:top-6">
+        <h3 className="text-xl font-bold text-white mb-4">📋 Guidelines</h3>
+        <ul className="text-gray-400 space-y-3">
+          <li>• Be as detailed and accurate as possible in your description</li>
+          <li>• Enter the city and state - coordinates will be determined automatically</li>
+          <li>• Include the date and time of your sighting</li>
+          <li>• Only submit genuine paranormal experiences</li>
+          <li>• All submissions are reviewed before being added to the database</li>
+        </ul>
 
-            {/* Submit Button */}
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-orange-400 hover:bg-orange-500 text-black font-medium px-6 py-3 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Submitting...' : 'Submit Sighting'}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push('/')}
-                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+        <div className="mt-6 pt-6 border-t border-gray-700">
+          <h4 className="text-lg font-bold text-white mb-3">📝 What to Include</h4>
+          <ul className="text-gray-400 space-y-2">
+            <li>• What you saw or experienced</li>
+            <li>• How long it lasted</li>
+            <li>• Weather conditions</li>
+            <li>• Were others present?</li>
+            <li>• Any physical evidence</li>
+          </ul>
         </div>
 
-        {/* Info Section */}
-        <div className="mt-8 bg-gray-900 border border-gray-800 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-white mb-3">📋 Guidelines for Reporting</h3>
-          <ul className="text-gray-400 text-sm space-y-2">
-            <li>• Be as detailed and accurate as possible in your description</li>
-            <li>• Enter the city and state - coordinates will be determined automatically</li>
-            <li>• Include the date and time of your sighting</li>
-            <li>• Only submit genuine paranormal experiences</li>
-            <li>• All submissions are reviewed before being added to the database</li>
+        <div className="mt-6 pt-6 border-t border-gray-700">
+          <h4 className="text-lg font-bold text-white mb-3">ℹ️ Quick Tips</h4>
+          <ul className="text-gray-400 space-y-2">
+            <li>• Use the location button for accurate coordinates</li>
+            <li>• Select the most appropriate apparition type</li>
+            <li>• Photo links must be publicly accessible</li>
           </ul>
+        </div>
+      </div>
         </div>
       </div>
     </div>

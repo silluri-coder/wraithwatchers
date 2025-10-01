@@ -18,27 +18,27 @@ export default function Navbar() {
 
   return (
     <nav className="bg-black border-b border-gray-800 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-[1920px] mx-auto px-6 sm:px-12">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                <span className="text-black font-bold text-lg">👻</span>
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                <span className="text-black font-bold text-xl">👻</span>
               </div>
-              <span className="text-white font-bold text-xl">WraithWatchers</span>
+              <span className="text-white font-bold text-2xl">WraithWatchers</span>
             </Link>
           </div>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-10">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`transition-colors duration-200 ${
+                className={`transition-colors duration-200 text-lg ${
                   isActive(link.href)
-                    ? 'text-orange-400 font-medium'
+                    ? 'text-orange-400 font-semibold'
                     : 'text-white hover:text-orange-400'
                 }`}
               >
@@ -51,7 +51,7 @@ export default function Navbar() {
           <div className="md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-white hover:text-orange-400 transition-colors"
+              className="text-white hover:text-orange-400 transition-colors text-xl"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
@@ -69,20 +69,20 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden pb-4 animate-in slide-in-from-top">
-            <div className="flex flex-col space-y-3">
+          <div className="md:hidden pb-6 animate-in slide-in-from-top">
+            <div className="flex flex-col space-y-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors text-lg ${
                     isActive(link.href)
-                      ? 'bg-orange-400 text-black font-medium'
+                      ? 'bg-orange-400 text-black font-semibold'
                       : 'text-white hover:bg-gray-800'
                   }`}
                 >
-                  <span>{link.icon}</span>
+                  <span className="text-xl">{link.icon}</span>
                   <span>{link.label}</span>
                 </Link>
               ))}

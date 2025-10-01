@@ -22,16 +22,16 @@ interface StatCardProps {
 
 function StatCard({ title, value, icon, description }: StatCardProps) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-orange-400 transition-colors duration-200">
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:border-orange-400 transition-colors duration-200">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-400 text-sm font-medium">{title}</p>
-          <p className="text-2xl font-bold text-white mt-1">{value}</p>
+          <p className="text-gray-400 text-xs font-medium">{title}</p>
+          <p className="text-xl font-bold text-white mt-0.5">{value}</p>
           {description && (
-            <p className="text-gray-500 text-xs mt-1">{description}</p>
+            <p className="text-gray-500 text-xs mt-0.5">{description}</p>
           )}
         </div>
-        <div className="text-3xl">{icon}</div>
+        <div className="text-2xl">{icon}</div>
       </div>
     </div>
   );
@@ -88,9 +88,9 @@ export default function SightingsStats({ sightings }: SightingsStatsProps) {
   console.log('📈 Real statistics calculated:', { totalSightings, activeStates, sightingsWithImages, thisMonthSightings });
 
   return (
-    <div className="mb-8">
-      <h2 className="text-2xl font-bold text-white mb-6">Sightings Overview</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="mb-4">
+      <h2 className="text-lg font-bold text-white mb-3">Sightings Overview</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <StatCard
             key={index}

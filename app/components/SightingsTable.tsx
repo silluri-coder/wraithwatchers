@@ -6,9 +6,16 @@ import { Sighting } from '../utils/supabaseClient';
 interface SightingsTableProps {
   sightings: Sighting[];
   onFilterChange?: (filteredSightings: Sighting[]) => void;
+  externalApparitionFilter?: string;
+  onApparitionFilterChange?: (filter: string) => void;
 }
 
-export default function SightingsTable({ sightings, onFilterChange }: SightingsTableProps) {
+export default function SightingsTable({ 
+  sightings, 
+  onFilterChange, 
+  externalApparitionFilter = '',
+  onApparitionFilterChange 
+}: SightingsTableProps) {
   const [filter, setFilter] = useState({
     apparitionType: '',
     timeOfDay: '',
@@ -17,19 +24,29 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 25;
+
+  // Sync external filter with internal filter
+  useEffect(() => {
+    if (externalApparitionFilter !== filter.apparitionType) {
+      setFilter(prev => ({ ...prev, apparitionType: externalApparitionFilter }));
+    }
+  }, [externalApparitionFilter]);
 
   // Get unique values for filters
   const uniqueApparitionTypes = [...new Set(sightings.map(s => s.apparitionType))];
   const uniqueTimeOfDay = [...new Set(sightings.map(s => s.timeOfDay))];
   const uniqueStates = [...new Set(sightings.map(s => s.state))];
 
+  // Use external filter if provided
+  const activeApparitionFilter = externalApparitionFilter || filter.apparitionType;
+
   // Filter and sort sightings - memoized to prevent unnecessary recalculations
   const filteredSightings = useMemo(() => {
     return sightings
       .filter(sighting => {
         return (
-          (filter.apparitionType === '' || sighting.apparitionType === filter.apparitionType) &&
+          (activeApparitionFilter === '' || sighting.apparitionType === activeApparitionFilter) &&
           (filter.timeOfDay === '' || sighting.timeOfDay === filter.timeOfDay) &&
           (filter.state === '' || sighting.state === filter.state)
         );
@@ -53,7 +70,7 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
           return aValue < bValue ? 1 : -1;
         }
       });
-  }, [sightings, filter, sortBy, sortOrder]);
+  }, [sightings, filter, sortBy, sortOrder, activeApparitionFilter]);
 
   // Notify parent component when filters change (not when filteredSightings changes)
   useEffect(() => {
@@ -61,7 +78,7 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
       onFilterChange(filteredSightings);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter.apparitionType, filter.timeOfDay, filter.state, sortBy, sortOrder, sightings]);
+  }, [activeApparitionFilter, filter.timeOfDay, filter.state, sortBy, sortOrder, sightings]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSightings.length / itemsPerPage);
@@ -81,18 +98,29 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
   const clearFilters = () => {
     setFilter({ apparitionType: '', timeOfDay: '', state: '' });
     setCurrentPage(1);
+    // Clear external filter
+    if (onApparitionFilterChange) {
+      onApparitionFilterChange('');
+    }
     // Immediately notify parent to show all sightings
     if (onFilterChange) {
       onFilterChange(sightings);
     }
   };
 
+  const handleApparitionTypeChange = (value: string) => {
+    setFilter({ ...filter, apparitionType: value });
+    if (onApparitionFilterChange) {
+      onApparitionFilterChange(value);
+    }
+  };
+
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Recent Sightings</h2>
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-bold text-white">Recent Sightings</h2>
         <div className="text-sm text-gray-400">
-          Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredSightings.length)} of {filteredSightings.length} sightings
+          Showing {filteredSightings.length > 0 ? startIndex + 1 : 0}-{Math.min(startIndex + itemsPerPage, filteredSightings.length)} of {filteredSightings.length} sightings
           {filteredSightings.length < sightings.length && (
             <span className="ml-2 text-orange-400">(filtered from {sightings.length} total)</span>
           )}
@@ -100,11 +128,11 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
         <select
-          value={filter.apparitionType}
-          onChange={(e) => setFilter({ ...filter, apparitionType: e.target.value })}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm"
+          value={activeApparitionFilter}
+          onChange={(e) => handleApparitionTypeChange(e.target.value)}
+          className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-white text-sm"
         >
           <option value="">All Apparition Types</option>
           {uniqueApparitionTypes.map(type => (
@@ -115,7 +143,7 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
         <select
           value={filter.timeOfDay}
           onChange={(e) => setFilter({ ...filter, timeOfDay: e.target.value })}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm"
+          className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-white text-sm"
         >
           <option value="">All Times</option>
           {uniqueTimeOfDay.map(time => (
@@ -126,7 +154,7 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
         <select
           value={filter.state}
           onChange={(e) => setFilter({ ...filter, state: e.target.value })}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm"
+          className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-white text-sm"
         >
           <option value="">All States</option>
           {uniqueStates.map(state => (
@@ -136,7 +164,7 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
 
         <button
           onClick={clearFilters}
-          className="bg-orange-400 hover:bg-orange-500 text-black px-4 py-2 rounded text-sm font-medium transition-colors"
+          className="bg-orange-400 hover:bg-orange-500 text-black px-3 py-1.5 rounded text-sm font-medium transition-colors"
         >
           Clear Filters
         </button>
@@ -145,49 +173,49 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 bg-gray-900 z-10">
             <tr className="border-b border-gray-700">
               <th 
-                className="text-left py-3 px-4 cursor-pointer hover:text-orange-400 transition-colors"
+                className="text-left py-2 px-3 cursor-pointer hover:text-orange-400 transition-colors"
                 onClick={() => handleSort('date')}
               >
                 Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
               </th>
               <th 
-                className="text-left py-3 px-4 cursor-pointer hover:text-orange-400 transition-colors"
+                className="text-left py-2 px-3 cursor-pointer hover:text-orange-400 transition-colors"
                 onClick={() => handleSort('apparitionType')}
               >
                 Type {sortBy === 'apparitionType' && (sortOrder === 'asc' ? '↑' : '↓')}
               </th>
               <th 
-                className="text-left py-3 px-4 cursor-pointer hover:text-orange-400 transition-colors"
+                className="text-left py-2 px-3 cursor-pointer hover:text-orange-400 transition-colors"
                 onClick={() => handleSort('city')}
               >
                 Location {sortBy === 'city' && (sortOrder === 'asc' ? '↑' : '↓')}
               </th>
               <th 
-                className="text-left py-3 px-4 cursor-pointer hover:text-orange-400 transition-colors"
+                className="text-left py-2 px-3 cursor-pointer hover:text-orange-400 transition-colors"
                 onClick={() => handleSort('timeOfDay')}
               >
                 Time {sortBy === 'timeOfDay' && (sortOrder === 'asc' ? '↑' : '↓')}
               </th>
-              <th className="text-left py-3 px-4">Notes</th>
-              <th className="text-left py-3 px-4">Evidence</th>
+              <th className="text-left py-2 px-3">Notes</th>
+              <th className="text-left py-2 px-3">Evidence</th>
             </tr>
           </thead>
           <tbody>
             {paginatedSightings.map((sighting) => (
               <tr key={sighting.id} className="border-b border-gray-800 hover:bg-gray-800 transition-colors">
-                <td className="py-3 px-4 text-gray-300">{sighting.date}</td>
-                <td className="py-3 px-4">
-                  <span className="bg-gray-700 text-white px-2 py-1 rounded text-xs">
+                <td className="py-2 px-3 text-gray-300">{sighting.date}</td>
+                <td className="py-2 px-3">
+                  <span className="bg-gray-700 text-white px-2 py-0.5 rounded text-xs">
                     {sighting.apparitionType}
                   </span>
                 </td>
-                <td className="py-3 px-4 text-gray-300">{sighting.city}, {sighting.state}</td>
-                <td className="py-3 px-4 text-gray-300">{sighting.timeOfDay}</td>
-                <td className="py-3 px-4 text-gray-400 max-w-xs truncate">{sighting.notes}</td>
-                <td className="py-3 px-4">
+                <td className="py-2 px-3 text-gray-300">{sighting.city}, {sighting.state}</td>
+                <td className="py-2 px-3 text-gray-300">{sighting.timeOfDay}</td>
+                <td className="py-2 px-3 text-gray-400 max-w-xs truncate">{sighting.notes}</td>
+                <td className="py-2 px-3">
                   {sighting.imageLink ? (
                     <span className="text-green-400">📷</span>
                   ) : (
@@ -202,11 +230,11 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center mt-6 space-x-2">
+        <div className="flex justify-center items-center mt-4 space-x-2">
           <button
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="px-3 py-2 bg-gray-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
+            className="px-2 py-1 text-sm bg-gray-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
           >
             Previous
           </button>
@@ -216,11 +244,11 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
             <>
               <button
                 onClick={() => setCurrentPage(1)}
-                className="px-3 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+                className="px-2 py-1 text-sm bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
               >
                 1
               </button>
-              {currentPage > 7 && <span className="px-2 text-gray-400">...</span>}
+              {currentPage > 7 && <span className="px-1 text-gray-400 text-sm">...</span>}
             </>
           )}
           
@@ -235,7 +263,7 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`px-3 py-2 rounded transition-colors ${
+                className={`px-2 py-1 text-sm rounded transition-colors ${
                   currentPage === page
                     ? 'bg-orange-400 text-black'
                     : 'bg-gray-800 text-white hover:bg-gray-700'
@@ -249,10 +277,10 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
           {/* Show last page if not in current range */}
           {currentPage < totalPages - 5 && (
             <>
-              {currentPage < totalPages - 6 && <span className="px-2 text-gray-400">...</span>}
+              {currentPage < totalPages - 6 && <span className="px-1 text-gray-400 text-sm">...</span>}
               <button
                 onClick={() => setCurrentPage(totalPages)}
-                className="px-3 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+                className="px-2 py-1 text-sm bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
               >
                 {totalPages}
               </button>
@@ -262,7 +290,7 @@ export default function SightingsTable({ sightings, onFilterChange }: SightingsT
           <button
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="px-3 py-2 bg-gray-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
+            className="px-2 py-1 text-sm bg-gray-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
           >
             Next
           </button>
